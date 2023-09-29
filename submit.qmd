@@ -1,28 +1,108 @@
 ---
-title: ""
+title: "Lab6"
 author: ""
-format:
+format: 
   html:
     embed-resources: true
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+## 
 
 ```{r}
-1 + 1
+#From lecture
+# alice <- readRDS("/Users/shirleyli/Desktop/Med_School/USC/MPH/Fall_2023/PM566_DataScience/Lab6/alice.rds")
+# alice
 ```
-
-You can add options to executable code like this
 
 ```{r}
-#| echo: false
-2 * 2
+library(dplyr)
+library(tidyverse)
+library(readr)
+library(dplyr)
+mt_samples <- read_csv("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/00_mtsamples/mtsamples.csv")
+mt_samples <- mt_samples %>%
+  select(description, medical_specialty, transcription)
+
+head(mt_samples)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+## Question 1
+```{r}
+#What specialties do we have? 
+library(tidytext)
+mt_samples %>%
+  count(medical_specialty, sort = TRUE)
+```
+
+## Question 2
+```{r}
+#Tokenize transcription
+mt_samples %>%
+  unnest_tokens(token, transcription) %>%
+  count(token, sort = TRUE) %>%
+  top_n(20, n)
+```
+Top 20 most frequent words are not especially helpful or insightful -- many are stop words. 
+
+## Question 3 
+```{r}
+#library(tm)
+#removeNumbers(token, ucp = TRUE) not working? 
+
+mt_samples %>%
+  unnest_tokens(token, transcription) %>%
+  anti_join(stop_words, by = c("token" = "word")) %>%
+  filter(!grepl("[0-9]", token)) %>%
+  count(token, sort = TRUE) %>%
+  top_n(20, n)
+```
+
+## Question 4 
+```{r}
+#Bigrams? Trigrams? 
+mt_samples %>%
+  unnest_ngrams(ngram, transcription, n = 2) %>%
+  count(ngram, sort = TRUE) %>% 
+  top_n(20, n)
+
+mt_samples %>%
+  unnest_ngrams(ngram, transcription, n = 3) %>%
+  count(ngram, sort = TRUE) %>% 
+  top_n(20, n)
+```
+The results changed with trigrams with much lower n, but interestingly increased number of rows. 
+
+## Question 5 
+```{r}
+#Count words before and after
+
+#Before
+mt_samples %>%
+  unnest_ngrams(ngram, transcription, n = 2) %>%
+  separate(ngram, into = c("word1", "word2"), sep = " ") %>%
+  select(word1, word2) %>%
+  filter(word2 == "medical") %>%
+  count(word1, sort = TRUE)
+```
+```{r}
+#After
+mt_samples %>%
+  unnest_ngrams(ngram, transcription, n = 2) %>%
+  separate(ngram, into = c("word1", "word2"), sep = " ") %>%
+  select(word1, word2) %>%
+  filter(word1 == "medical") %>%
+  count(word2, sort = TRUE)
+```
+
+## Question 6 
+```{r}
+#Words used most in each specialty 
+mt_samples %>%
+  unnest_tokens(token, transcription) %>%
+  anti_join(stop_words, by = c("token" = "word")) %>%
+  filter(!grepl("[0-9]", token)) %>%
+  count(medical_specialty, token, sort = TRUE) %>%
+  group_by(medical_specialty) %>%
+  top_n(5, n)
+```
+
