@@ -18,7 +18,6 @@ format:
 library(dplyr)
 library(tidyverse)
 library(readr)
-library(dplyr)
 mt_samples <- read_csv("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/00_mtsamples/mtsamples.csv")
 mt_samples <- mt_samples %>%
   select(description, medical_specialty, transcription)
